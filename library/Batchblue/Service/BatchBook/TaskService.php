@@ -8,13 +8,13 @@
  */
 
 /**
- * Person Service
+ * Task Service
  *
  * @category    Batchblue
  * @package     Batchblue_Service
  * @subpackage  BatchBook
  */
-class Batchblue_Service_BatchBook_PersonService
+class Batchblue_Service_BatchBook_TaskService
 {
     /**
      * @var string
@@ -27,7 +27,7 @@ class Batchblue_Service_BatchBook_PersonService
     private $_token;
 
     /**
-     * Construct new Person Service
+     * Construct new Task Service
      *
      * @param string $token
      */
@@ -38,32 +38,31 @@ class Batchblue_Service_BatchBook_PersonService
     }
 
     /**
-     * Create Person From XML
+     * Create Task From XML
      *
      * @param SimpleXMLElement $xmlElement
-     * @return Batchblue_Service_BatchBook_Person
+     * @return Batchblue_Service_BatchBook_Task
      */
-    private function _populatePersonFromXmlElement(
+    private function _populateTaskFromXmlElement(
         SimpleXMLElement $xmlElement,
-        Batchblue_Service_BatchBook_Person $person = null
+        Batchblue_Service_BatchBook_Task $task = null
     )
     {
-        if (null === $person) {
-            $person = new Batchblue_Service_BatchBook_Person();
+        if (null === $task) {
+            $task = new Batchblue_Service_BatchBook_Task();
         }
-        $person
+        $task
             ->setId($xmlElement->id)
-            ->setFirstName($xmlElement->first_name)
-            ->setLastName($xmlElement->last_name)
-            ->setTitle($xmlElement->title)
-            ->setCompany($xmlElement->company)
-            ->setNotes($xmlElement->notes)
+            ->setSubject($xmlElement->subject)
+            ->setBody($xmlElement->body)
+            ->setDate($xmlElement->date)
+            ->setCtype($xmlElement->ctype)
         ;
-        return $person;
+        return $task;
     }
 
     /**
-     * Index Of Persons
+     * Index Of Tasks
      *
      * @param string $name
      * @param string $email
@@ -71,16 +70,16 @@ class Batchblue_Service_BatchBook_PersonService
      * @param integer $limit
      * @return array
      */
-    public function indexOfPersons($name = null, $email= null, $offset = null, $limit = null)
+    public function indexOfTasks($contact_id = null, $ctype = null, $offset = null, $limit = null)
     {
         $httpClient = new Zend_Http_Client(
-            'https://' . $this->_accountName . '.batchbook.com/service/people.xml'
+            'https://' . $this->_accountName . '.batchbook.com/service/tasks.xml'
         );
-        if (null !== $name) {
-            $httpClient->setParameterGet('name', $name);
+        if (null !== $contact_id) {
+            $httpClient->setParameterGet('contact_id', $contact_id);
         }
-        if (null !== $email) {
-            $httpClient->setParameterGet('email', $email);
+        if (null !== $ctype) {
+            $httpClient->setParameterGet('ctype', $ctype);
         }
         if (null !== $offset) {
             $httpClient->setParameterGet('offset', $offset);
@@ -91,23 +90,23 @@ class Batchblue_Service_BatchBook_PersonService
         $httpClient->setAuth($this->_token, 'x');
         $response = $httpClient->request(Zend_Http_Client::GET);
         $xmlResponse = simplexml_load_string($response->getBody());
-        $persons = array();
-        foreach ($xmlResponse->person as $personElement) {
-            $persons[] = $this->_populatePersonFromXmlElement($personElement);
+        $tasks = array();
+        foreach ($xmlResponse->task as $taskElement) {
+            $tasks[] = $this->_populateTaskFromXmlElement($taskElement);
         }
-        return $persons;
+        return $tasks;
     }
 
     /**
-     * Get Person
+     * Get Task
      *
      * @param integer $id
-     * @return Batchblue_Service_BatchBook_Person
+     * @return Batchblue_Service_BatchBook_Task
      */
-    public function getPerson($id)
+    public function getTask($id)
     {
         $httpClient = new Zend_Http_Client(
-            'https://' . $this->_accountName . '.batchbook.com/service/people/' . $id . '.xml'
+            'https://' . $this->_accountName . '.batchbook.com/service/tasks/' . $id . '.xml'
         );
         $httpClient->setAuth($this->_token, 'x');
         $response = $httpClient->request(Zend_Http_Client::GET);
@@ -119,75 +118,70 @@ class Batchblue_Service_BatchBook_PersonService
                 break;
             default;
                 //TODO: throw more specific exception
-                throw new Exception('Could not get Person.');
+                throw new Exception('Could not get Task.');
         }
         $xmlResponse = simplexml_load_string($response->getBody());
-        return $this->_populatePersonFromXmlElement($xmlResponse);
+        return $this->_populateTaskFromXmlElement($xmlResponse);
     }
 
     /**
-     * Post Person
+     * Post Task
      *
-     * @param Batchblue_Service_BatchBook_Person $person
-     * @return Batchblue_Service_BatchBook_PersonService   Provides a fluent interface
+     * @param Batchblue_Service_BatchBook_Task $task
+     * @return Batchblue_Service_BatchBook_TaskService   Provides a fluent interface
      */
-    public function postPerson(Batchblue_Service_BatchBook_Person $person)
+    public function postTask(Batchblue_Service_BatchBook_Task $task)
     {
         $httpClient = new Zend_Http_Client(
-            'https://' . $this->_accountName . '.batchbook.com/service/people.xml'
+            'https://' . $this->_accountName . '.batchbook.com/service/tasks.xml'
         );
         $httpClient->setParameterPost(
-            'person[first_name]',
-            $person->getFirstName()
+            'task[subject]',
+            $task->getSubject()
         );
         $httpClient->setParameterPost(
-            'person[last_name]',
-            $person->getLastName()
+            'task[body]',
+            $task->getBody()
         );
         $httpClient->setParameterPost(
-            'person[title]',
-            $person->getTitle()
+            'task[date]',
+            $task->getDate()
         );
         $httpClient->setParameterPost(
-            'person[company]',
-            $person->getCompany()
-        );
-        $httpClient->setParameterPost(
-            'person[notes]',
-            $person->getNotes()
+            'task[ctype]',
+            $task->getCtype()
         );
         $httpClient->setAuth($this->_token, 'x');
         $response = $httpClient->request(Zend_Http_Client::POST);
         if (201 != $response->getStatus()) {
             //TODO: throw more specific exception
-            throw new Exception('Person not created.');
+            throw new Exception('Task not created.');
         }
         $location = $response->getHeader('location');
         $httpClient = new Zend_Http_Client($location);
         $httpClient->setAuth($this->_token, 'x');
         $response = $httpClient->request(Zend_Http_Client::GET);
         $xmlResponse = simplexml_load_string($response->getBody());
-        $this->_populatePersonFromXmlElement($xmlResponse, $person);
+        $this->_populateTaskFromXmlElement($xmlResponse, $task);
         return $this;
     }
 
     /**
-     * Put Person
+     * Put Task
      *
-     * @param Batchblue_Service_BatchBook_Person $person
-     * @return Batchblue_Service_BatchBook_PersonService   Provides a fluent interface
+     * @param Batchblue_Service_BatchBook_Task $task
+     * @return Batchblue_Service_BatchBook_TaskService   Provides a fluent interface
      */
-    public function putPerson(Batchblue_Service_BatchBook_Person $person)
+    public function putTask(Batchblue_Service_BatchBook_Task $task)
     {
         $httpClient = new Zend_Http_Client(
-            'https://' . $this->_accountName . '.batchbook.com/service/people/' . $person->getId() . '.xml'
+            'https://' . $this->_accountName . '.batchbook.com/service/tasks/' . $task->getId() . '.xml'
         );
         $paramsPut = array(
-            'person[first_name]'    => $person->getFirstName(),
-            'person[last_name]'     => $person->getLastName(),
-            'person[title]'         => $person->getTitle(),
-            'person[company]'       => $person->getCompany(),
-            'person[notes]'         => $person->getNotes(),
+            'task[subject]'    => $task->getSubject(),
+            'task[body]'     => $task->getBody(),
+            'task[date]'         => $task->getDate(),
+            'task[ctype]'       => $task->getCtype(),
         );
         $httpClient->setAuth($this->_token, 'x');
         $httpClient->setHeaders(
@@ -201,27 +195,27 @@ class Batchblue_Service_BatchBook_PersonService
         $response = $httpClient->request(Zend_Http_Client::PUT);
         if (200 != $response->getStatus()) {
             //TODO: throw more specific exception
-            throw new Exception('Person not updated.');
+            throw new Exception('Task not updated.');
         }
         return $this;
     }
 
     /**
-     * Delete Person
+     * Delete Task
      *
-     * @param Batchblue_Service_BatchBook_Person $person
-     * @return Batchblue_Service_BatchBook_PersonService   Provides a fluent interface
+     * @param Batchblue_Service_BatchBook_Task $task
+     * @return Batchblue_Service_BatchBook_TaskService   Provides a fluent interface
      */
-    public function deletePerson(Batchblue_Service_BatchBook_Person $person)
+    public function deleteTask(Batchblue_Service_BatchBook_Task $task)
     {
         $httpClient = new Zend_Http_Client(
-            'https://' . $this->_accountName . '.batchbook.com/service/people/' . $person->getId() . '.xml'
+            'https://' . $this->_accountName . '.batchbook.com/service/tasks/' . $task->getId() . '.xml'
         );
         $httpClient->setAuth($this->_token, 'x');
         $response = $httpClient->request(Zend_Http_Client::DELETE);
         if (200 != $response->getStatus()) {
             //TODO: throw more specific exception
-            throw new Exception('Person not deleted.');
+            throw new Exception('Task not deleted.');
         }
         return $this;
     }
